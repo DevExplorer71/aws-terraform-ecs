@@ -60,7 +60,7 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
 }
 
 # (Optional) Task Role if your container needs to assume additional permissions.
-resource "aws_iam_role" "ecs_task_rolea" {
+resource "aws_iam_role" "ecs_task_starting_role" {
   name = "ecsTaskRolea"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -77,21 +77,21 @@ resource "aws_iam_role" "ecs_task_rolea" {
 #---------------------------
 # ECS Cluster
 #---------------------------
-resource "aws_ecs_cluster" "example" {
+resource "aws_ecs_cluster" "first-cluster" {
   name = "genesis-cluster"
 }
 
 #---------------------------
 # Custom ECS Task Definition
 #---------------------------
-resource "aws_ecs_task_definition" "example" {
+resource "aws_ecs_task_definition" "first-ecs-task" {
   family                   = "first-task"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = "256"  # 0.25 vCPU
   memory                   = "512"  # 512 MB
-  execution_role_arn       = aws_iam_role.ecs_task_execution_rolea.arn
-  task_role_arn            = aws_iam_role.ecs_task_rolea.arn
+  execution_role_arn       = aws_iam_role.ecs_task_starting_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_starting_role.arn
 
   container_definitions = jsonencode([
     {
@@ -116,8 +116,8 @@ resource "aws_ecs_task_definition" "example" {
 #---------------------------
 resource "aws_ecs_service" "example" {
   name            = "example-service"
-  cluster         = aws_ecs_cluster.example.id
-  task_definition = aws_ecs_task_definition.example.arn
+  cluster         = aws_ecs_cluster.first-cluster.arn
+  task_definition = aws_ecs_task_definition.first-ecs-task.arn
   desired_count   = 1
   launch_type     = "FARGATE"
 
